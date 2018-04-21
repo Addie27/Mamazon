@@ -4,7 +4,9 @@ var inquirer = require('inquirer');
 var productName;
 var productStockQuantity;
 var quantitySelected;
-var priceString;
+var productPriceDecimal;
+var quantityCheck;
+var productPrice;
 
 
 var connection = mysql.createConnection({
@@ -34,7 +36,7 @@ function readProducts() {
 
         for (var i = 0; i < res.length; i++) {
             var price = res[i].price
-            priceString = price.toFixed(2);
+            var priceString = price.toFixed(2);
             console.log("Item#: " + res[i].item_id + "|" + " Product Name: " + res[i].product_name + "|" + " Price " + "$" + priceString);
         }
 
@@ -43,6 +45,7 @@ function readProducts() {
 }
 
 function itemSelection() {
+
     inquirer
         .prompt([
             {
@@ -53,21 +56,23 @@ function itemSelection() {
         ])
         .then(function (answer) {
             itemID = answer.purchase;
-            var query1 = "SELECT product_name, stock_quantity FROM products WHERE ?"
+            var query1 = "SELECT product_name, stock_quantity, price FROM products WHERE ?"
             connection.query(query1, { item_id: itemID }, function (err, res) {
                 productName = res[0].product_name;
                 productStockQuantity = res[0].stock_quantity;
+                productPrice = res[0].price;
                 selectQuantity();
 
             })
         })//then end
     function selectQuantity() {
+
         inquirer
             .prompt([
                 {
                     name: "quantity",
                     type: "input",
-                    message: "How many of " + productName + " would you like?",
+                    message: "How many " + productName + "(s) would you like?",
                     validate: function (value) {
                         if (isNaN(value) === false) {
                             return true;
@@ -82,6 +87,7 @@ function itemSelection() {
                 stockComparison();
             }) //connection end
         function stockComparison() {
+
 
             var quantityCheck = productStockQuantity - quantitySelected;
             if (quantityCheck <= 0) {
@@ -111,12 +117,14 @@ function itemSelection() {
             else {
                 confirmPurchase();
                 function confirmPurchase() {
+                    var purchasePrice = quantitySelected * productPrice;
+                    var purchasePriceDecimal = purchasePrice.toFixed(2);
                     inquirer
                         .prompt([
                             {
                                 type: 'list',
                                 name: 'confirmOrder',
-                                message: "Confirm purchse: Product: " + productName + " | " + "Quantity: " + quantitySelected + " | " + "Price: " + priceString,
+                                message: "Confirm purchase: Product: " + productName + " | " + "Quantity: " + quantitySelected + " | " + "Price: " + purchasePriceDecimal,
                                 choices: [
                                     'Y',
                                     'N',
@@ -124,7 +132,77 @@ function itemSelection() {
                             },
                         ])
                         .then(answers => {
-                            console.log(answers);
+                            if (answers.confirmOrder === "N") {
+                                inquirer
+                                    .prompt([
+                                        {
+                                            type: 'list',
+                                            name: 'exit',
+                                            message: "Would you like to select another item?",
+                                            choices: [
+                                                'Y',
+                                                'N',
+                                            ]
+                                        },
+                                    ])
+                                    .then(answers => {
+                                        if (answers.exit === "N") {
+                                            console.log("Okay thank you, please come again!");
+                                            connection.end();
+                                        }
+                                        else {
+                                            readProducts();
+                                        }
+
+                                    });
+                            }//if confirmOrder No
+                            else {
+                                updateQuantity();
+                                function updateQuantity() {
+
+                                    var query2 = "UPDATE products SET ? WHERE ?";
+
+                                    connection.query(query2,
+                                        [
+                                            {
+                                                stock_quantity: quantityCheck
+                                            },
+                                            {
+                                                item_id: itemID
+                                            }
+                                        ],
+                                        function (err, res) {
+                                            console.log("Thank you for your purchase!")
+                                            inquirer
+                                                .prompt([
+                                                    {
+                                                        type: 'list',
+                                                        name: 'exit',
+                                                        message: "Would you like to select another item?",
+                                                        choices: [
+                                                            'Y',
+                                                            'N',
+                                                        ]
+                                                    },
+                                                ])
+                                                .then(answers => {
+                                                    if (answers.exit === "N") {
+                                                        console.log("Okay thank you, please come again!");
+                                                        connection.end();
+                                                    }
+                                                    else {
+                                                        readProducts();
+                                                    }
+
+                                                });
+
+
+                                        }
+                                    );
+
+                                }//updateQuantity end
+
+                            }//if confirmOrder No else
 
                         });
                 }//confirm purchase end
@@ -142,27 +220,5 @@ function itemSelection() {
 
 
 
-// function updateQuantity() {
 
-//     console.log("Updating products\n");
-
-//     var query2 = "UPDATE products SET ? WHERE ?";
-
-//     connection.query(query2,
-//         [
-//             {
-//                 stock_quantity: quantityRequested
-//             },
-//             {
-//                 item_id: purchase
-//             }
-//         ],
-//         function (err, res) {
-//             console.log(res.affectedRows + " products updated!\n");
-//             // Call deleteProduct AFTER the UPDATE completes
-
-//         }
-//     );
-
-// }
 
