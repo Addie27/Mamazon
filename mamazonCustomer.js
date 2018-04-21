@@ -1,8 +1,10 @@
 require("dotenv").config();
 var mysql = require("mysql");
 var inquirer = require('inquirer');
-var itemID;
 var productName;
+var productStockQuantity;
+var quantitySelected;
+var priceString;
 
 
 var connection = mysql.createConnection({
@@ -32,15 +34,15 @@ function readProducts() {
 
         for (var i = 0; i < res.length; i++) {
             var price = res[i].price
-            var priceString = price.toFixed(2);
+            priceString = price.toFixed(2);
             console.log("Item#: " + res[i].item_id + "|" + " Product Name: " + res[i].product_name + "|" + " Price " + "$" + priceString);
         }
 
-        purchaseRequest();
+        itemSelection();
     });
 }
 
-function purchaseRequest() {
+function itemSelection() {
     inquirer
         .prompt([
             {
@@ -48,122 +50,98 @@ function purchaseRequest() {
                 type: "input",
                 message: "Enter the item # of the product you would like to purchase."
             },
-            {
-                name: "quantity",
-                type: "input",
-                message: "How many would you like?",
-                validate: function (value) {
-                    if (isNaN(value) === false) {
-                        return true;
-                    }
-                    return false;
-                }
-            }
         ])
         .then(function (answer) {
             itemID = answer.purchase;
-            var query1 = "SELECT stock_quantity FROM products WHERE ?"
-
-
+            var query1 = "SELECT product_name, stock_quantity FROM products WHERE ?"
             connection.query(query1, { item_id: itemID }, function (err, res) {
-
-                var stockQuantity = res[0].stock_quantity;
-                var productName = res[0].product_name;
-
-                var purchaseQuantity = answer.quantity;
-                stockComparison(purchaseQuantity, stockQuantity);
+                productName = res[0].product_name;
+                productStockQuantity = res[0].stock_quantity;
+                selectQuantity();
 
             })
         })//then end
-} //purchaseRequest end
-
-function stockComparison(quantitySelected, quantityInStock) {
-
-    var quantityCheck = quantityInStock - quantitySelected;
-    if (quantityCheck <= 0) {
+    function selectQuantity() {
         inquirer
             .prompt([
                 {
-                    type: 'list',
-                    name: 'changeOrder',
-                    message: "I am sorry the amount requested is more than what we have in stock. We only have " + quantityInStock + " in stock. What do you want to do?",
-                    choices: [
-                        'Change quantity',
-                        'Select another item',
-                    ]
-                },
-            ])
-            .then(answers => {
-
-                if (answers.changeOrder === "Change quantity") {
-                    changeQuantity();
-                }
-                else if (answers.changeOrder === "Select another item") {
-                    purchaseRequest();
-                }
-            });
-
-    }
-    else {
-        confirmPurchase(quantitySelected);
-    }
-};
-
-
-function changeQuantity() {
-    inquirer
-        .prompt([
-            {
-                name: "quantity",
-                type: "input",
-                message: "How many would you like?",
-                validate: function (value) {
-                    if (isNaN(value) === false) {
-                        return true;
+                    name: "quantity",
+                    type: "input",
+                    message: "How many of " + productName + " would you like?",
+                    validate: function (value) {
+                        if (isNaN(value) === false) {
+                            return true;
+                        }
+                        return false;
                     }
-                    return false;
                 }
-            }
-        ])
-        .then(function (answer) {
-            var query1 = "SELECT stock_quantity FROM products WHERE ?"
-            connection.query(query1, { item_id: itemID }, function (err, res) {
+            ])
+            .then(function (answer) {
 
-                var newstockQuantity = res[0].stock_quantity;
+                quantitySelected = answer.quantity;
+                stockComparison();
+            }) //connection end
+        function stockComparison() {
 
-                var quantitySelected = answer.quantity;
-                stockComparison(quantitySelected, newstockQuantity);
+            var quantityCheck = productStockQuantity - quantitySelected;
+            if (quantityCheck <= 0) {
+                inquirer
+                    .prompt([
+                        {
+                            type: 'list',
+                            name: 'changeOrder',
+                            message: "I am sorry the amount requested is more than what we have in stock. We only have " + quantityInStock + " in stock. What do you want to do?",
+                            choices: [
+                                'Change quantity',
+                                'Select another item',
+                            ]
+                        },
+                    ])
+                    .then(answers => {
 
-            })
-        })//then end
+                        if (answers.changeOrder === "Change quantity") {
+                            selectQuantity();
+                        }
+                        else if (answers.changeOrder === "Select another item") {
+                            itemSelection();
+                        }
+                    });
 
-}
+            }//if end
+            else {
+                confirmPurchase();
+                function confirmPurchase() {
+                    inquirer
+                        .prompt([
+                            {
+                                type: 'list',
+                                name: 'confirmOrder',
+                                message: "Confirm purchse: Product: " + productName + " | " + "Quantity: " + quantitySelected + " | " + "Price: " + priceString,
+                                choices: [
+                                    'Y',
+                                    'N',
+                                ]
+                            },
+                        ])
+                        .then(answers => {
+                            console.log(answers);
 
-function confirmPurchase(quantityPurchased) {
-    var query1 = "SELECT price FROM products WHERE ?"
-    connection.query(query1, { product_name: productName }, function (err, res) {
-        console.log(res);
-        // var productPrice = res[0].price;
+                        });
+                }//confirm purchase end
 
-        // inquirer
-        //     .prompt([
-        //         {
-        //             type: 'list',
-        //             name: 'changeOrder',
-        //             message: "Confirm purchse: Product: " + productType + " | " + "Quantity: " + quantityPurchased + " | " + "Price: " + productPrice,
-        //             choices: [
-        //                 'Y',
-        //                 'N',
-        //             ]
-        //         },
-        //     ])
-        //     .then(answers => {
+            }//else end
+        }//stock comparison end
 
-                
-        //     });
-    })
+    }//selectquantity then end
 
-}
+}; //itemSelection end
+
+
+
+
+
+
+
 // function updateQuantity() {
 
 //     console.log("Updating products\n");
