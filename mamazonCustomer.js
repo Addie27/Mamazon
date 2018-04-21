@@ -172,7 +172,7 @@ function itemSelection() {
                                             }
                                         ],
                                         function (err, res) {
-                                            console.log("Thank you for your purchase!")
+                                            console.log("Thank you for your purchase! Your ordered " + quantitySelected + " " + productName + "(s)! Total price: $" + purchasePriceDecimal)
                                             inquirer
                                                 .prompt([
                                                     {
