@@ -96,7 +96,7 @@ function itemSelection() {
                         {
                             type: 'list',
                             name: 'changeOrder',
-                            message: "I am sorry the amount requested is more than what we have in stock. We only have " + quantityInStock + " in stock. What do you want to do?",
+                            message: "I am sorry the amount requested is more than what we have in stock. We only have " + productStockQuantity+ " in stock. What do you want to do?",
                             choices: [
                                 'Change quantity',
                                 'Select another item',
