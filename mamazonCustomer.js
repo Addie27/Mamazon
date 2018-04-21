@@ -2,8 +2,8 @@ require("dotenv").config();
 var mysql = require("mysql");
 var inquirer = require('inquirer');
 var itemID;
-var quantityRequested;
-var purchase;
+var productName;
+
 
 var connection = mysql.createConnection({
     host: process.env.DB_HOST,
@@ -64,9 +64,11 @@ function purchaseRequest() {
             itemID = answer.purchase;
             var query1 = "SELECT stock_quantity FROM products WHERE ?"
 
+
             connection.query(query1, { item_id: itemID }, function (err, res) {
 
                 var stockQuantity = res[0].stock_quantity;
+                var productName = res[0].product_name;
 
                 var purchaseQuantity = answer.quantity;
                 stockComparison(purchaseQuantity, stockQuantity);
@@ -97,15 +99,13 @@ function stockComparison(quantitySelected, quantityInStock) {
                     changeQuantity();
                 }
                 else if (answers.changeOrder === "Select another item") {
-                    readProducts();
                     purchaseRequest();
                 }
             });
 
     }
     else {
-        console.log("you are good to proceed");
-        // updateQuantity();
+        confirmPurchase(quantitySelected);
     }
 };
 
@@ -136,6 +136,32 @@ function changeQuantity() {
 
             })
         })//then end
+
+}
+
+function confirmPurchase(quantityPurchased) {
+    var query1 = "SELECT price FROM products WHERE ?"
+    connection.query(query1, { product_name: productName }, function (err, res) {
+        console.log(res);
+        // var productPrice = res[0].price;
+
+        // inquirer
+        //     .prompt([
+        //         {
+        //             type: 'list',
+        //             name: 'changeOrder',
+        //             message: "Confirm purchse: Product: " + productType + " | " + "Quantity: " + quantityPurchased + " | " + "Price: " + productPrice,
+        //             choices: [
+        //                 'Y',
+        //                 'N',
+        //             ]
+        //         },
+        //     ])
+        //     .then(answers => {
+
+                
+        //     });
+    })
 
 }
 // function updateQuantity() {
