@@ -95,11 +95,11 @@ function lowInventory() {
 function addInventory() {
     connection.query("SELECT * FROM products", function (err, res) {
         if (err) throw err;
-
+        var choices = [];
         for (var i = 0; i < res.length; i++) {
-            var choices = [];
+            
             choices.push(res[i].product_name);
-            var options = choices.join();
+            //var options = choices.join();
             
         }//for end
         inquirer
@@ -108,10 +108,8 @@ function addInventory() {
                     type: 'list',
                     name: 'add',
                     message: "Select a product to add inventory",
-                    choices: [
-                        
-                    ]
-                },
+                    choices: choices
+                }
             ])
             .then(function (answer) {
                 connection.end();
