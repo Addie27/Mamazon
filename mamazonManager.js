@@ -4,6 +4,7 @@ var inquirer = require('inquirer');
 var choices = []
 var updatedStockQuantity;
 var selection;
+var product;
 
 var connection = mysql.createConnection({
     host: process.env.DB_HOST,
@@ -71,9 +72,12 @@ function readProducts() {
             var price = res[i].price
             var priceString = price.toFixed(2);
             console.log("Item#:" + res[i].item_id + "|" + " Product Name: " + res[i].product_name + "|" + " Department Name: " + res[i].department_name + "|" + "Price " + "$" + priceString + "|" + "Stock Quantity: " + res[i].stock_quantity);
+
         }
         queryManager();
     });
+
+
 }
 
 function lowInventory() {
@@ -87,11 +91,13 @@ function lowInventory() {
                 var price = res[i].price
                 var priceString = price.toFixed(2);
                 console.log("Item#:" + res[i].item_id + "|" + " Product Name: " + res[i].product_name + "|" + " Department Name: " + res[i].department_name + "|" + "Price " + "$" + priceString + "|" + "Stock Quantity: " + res[i].stock_quantity);
-            }
 
+            }
         }
         queryManager();
     })
+
+
 }; //lowInventory end
 
 function addInventory() {
@@ -153,7 +159,7 @@ function addInventory() {
                                         connection.query(query, { product_name: selection }, function (err, res) {
                                             if (err) throw err;
                                             console.log(selection + "'s inventory has been updated. New inventory total: " + res[0].stock_quantity);
-
+                                            queryManager();
                                         })
 
                                     }
@@ -171,5 +177,74 @@ function addInventory() {
             })//connection end
 
     }); //array end
+
 }//add inventory end
 
+
+function addProduct() {
+    inquirer
+        .prompt([
+            {
+                type: 'input',
+                name: 'product',
+                message: "Please input a product to be added",
+
+            }
+        ])
+        .then(function (answer) {
+            product = answer.product
+            connection.query("SELECT * FROM products", function (err, res) {
+                if (err) throw err;
+                for (var i = 0; i < res.length; i++) {
+                    var inventoryProduct = res[i].product_name
+                } // for end
+                if (product === inventoryProduct) {
+                    console.log("That item already exists in inventory. Please enter another product");
+                    addProduct();
+                }
+                else {
+                    inquirer
+                        .prompt([
+                            {
+                                type: 'input',
+                                name: 'department',
+                                message: "Please input the department of the new product",
+
+                            },
+                            {
+                                type: 'input',
+                                name: 'price',
+                                message: "Please input the price of the new product",
+
+                            },
+                            {
+                                type: 'input',
+                                name: 'stock_quantity',
+                                message: "Please indicate the stock quantity of the new product",
+
+                            },
+
+                        ])
+                        .then(function (answer) {
+                            connection.query("SELECT * FROM products", function (err, res) {
+                                if (err) throw err;
+                                var query = "INSERT INTO products SET ?"
+                                connection.query(query, { product_name: product, department_name: answer.department, price: answer.price, stock_quantity: answer.stock_quantity }, function (err, res) {
+                                    if (err) throw err;
+                                    console.log(product + "(s) were added to the inventory list");
+                                    queryManager();
+                                })
+                                
+                            })
+                            
+                            
+
+                        })//then end 
+                        
+                }//else end
+            })//connection query end
+            
+
+        })//then input product end
+
+} //add product end
