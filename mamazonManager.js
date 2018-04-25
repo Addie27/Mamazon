@@ -2,6 +2,8 @@ require("dotenv").config();
 var mysql = require("mysql");
 var inquirer = require('inquirer');
 var choices = []
+var updatedStockQuantity;
+var selection;
 
 var connection = mysql.createConnection({
     host: process.env.DB_HOST,
@@ -97,26 +99,77 @@ function addInventory() {
         if (err) throw err;
         var choices = [];
         for (var i = 0; i < res.length; i++) {
-            
+
             choices.push(res[i].product_name);
             //var options = choices.join();
-            
+
         }//for end
         inquirer
             .prompt([
                 {
                     type: 'list',
-                    name: 'add',
+                    name: 'select',
                     message: "Select a product to add inventory",
                     choices: choices
-                }
+                },
             ])
             .then(function (answer) {
-                connection.end();
+                selection = answer.select;
+                var query = "SELECT stock_quantity FROM products WHERE ?"
+                connection.query(query, { product_name: selection }, function (err, res) {
+                    if (err) throw err;
+                    console.log("This product --" + selection + "-- has " + res[0].stock_quantity + " units in inventory.");
 
-            })
+                    inquirer
+                        .prompt([
+                            {
+                                name: "add",
+                                type: "input",
+                                message: "How much inventory would you like to add?"
+                            }
+                        ])
+                        .then(function (answer) {
 
-    })//connection end
+                            var query = "SELECT stock_quantity FROM products WHERE ?"
+                            connection.query(query, { product_name: selection }, function (err, res) {
+                                if (err) throw err;
 
-}; //add invetory end
+                                var currentStockQuantity = parseInt(res[0].stock_quantity)
+                                var newStockQuantity = parseInt(answer.add);
+                                var updatedStockQuantity = currentStockQuantity + newStockQuantity;
+                                connection.query(
+                                    "UPDATE products SET ? WHERE ?",
+                                    [
+                                        {
+                                            stock_quantity: updatedStockQuantity
+                                        },
+                                        {
+                                            product_name: selection
+                                        }
+                                    ],
+                                    function (err, res) {
+
+                                        var query = "SELECT stock_quantity FROM products WHERE ?"
+                                        connection.query(query, { product_name: selection }, function (err, res) {
+                                            if (err) throw err;
+                                            console.log(selection + "'s inventory has been updated. New inventory total: " + res[0].stock_quantity);
+
+                                        })
+
+                                    }
+                                );
+
+
+
+                            })
+
+
+                        })
+
+                })
+
+            })//connection end
+
+    }); //array end
+}//add inventory end
 
