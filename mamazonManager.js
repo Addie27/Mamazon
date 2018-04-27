@@ -5,6 +5,7 @@ var choices = []
 var updatedStockQuantity;
 var selection;
 var product;
+var inventory = [];
 
 var connection = mysql.createConnection({
     host: process.env.DB_HOST,
@@ -196,10 +197,12 @@ function addProduct() {
             connection.query("SELECT * FROM products", function (err, res) {
                 if (err) throw err;
                 for (var i = 0; i < res.length; i++) {
-                    var inventoryProduct = res[i].product_name
-                } // for end
-                if (product === inventoryProduct) {
-                    console.log("That item already exists in inventory. Please enter another product");
+
+                    inventory.push(res[i].product_name);
+        
+                }//for end
+                if (inventory.includes(product) ){
+                    console.log("That product is already in inventory. Please enter another product to add.");
                     addProduct();
                 }
                 else {
@@ -240,8 +243,8 @@ function addProduct() {
                             
 
                         })//then end 
-                        
-                }//else end
+                }       
+                
             })//connection query end
             
 
