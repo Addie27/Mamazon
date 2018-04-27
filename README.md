@@ -4,11 +4,9 @@
 ##### Rename this file to ".env" and enter your personal key values on a non-public server to run this application.
 ##### MySQL Connection 
 
-MYSQL_HOST = 'localhost'  
-MYSQL_USER = 'user'  
-MYSQL_PW = 'secret'  
-MYSQL_DB = 'bamazon'  
-
+DB_HOST="localhost"  
+DB_USER="root"  
+DB_PASS="your password"   
 
 
 https://youtu.be/EBsQzY5SBtY - MamazonManager.js
